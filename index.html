@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Upload and Resize App</title>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://stuk.github.io/jszip/dist/jszip.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    #imageUploadForm {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      color: #2c3e50;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0;
+      font-size: 16px;
+      color: #34495e;
+    }
+
+    .image-preview {
+      max-width: 100%;
+      height: auto;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    input[type="text"],
+    button {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #3498db;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    #downloadLink {
+      text-decoration: none;
+      margin-top: 20px;
+      display: inline-block;
+    }
+
+    #downloadBtn {
+      background-color: #27ae60;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #downloadBtn:hover {
+      background-color: #219d54;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="imageUploadForm">
+    <h1>Image Upload and Resize App</h1>
+
+    <form id="form" enctype="multipart/form-data">
+      <!-- Client Name input -->
+      <label for="clientName">Client Name:</label>
+      <input type="text" name="clientName" id="clientName" placeholder="Enter client name">
+
+      <!-- Image upload field 1 with preview (fit, center-top, 400x400px) -->
+      <label for="image1">Image 1 (400x400px):</label>
+      <input type="file" name="image1" accept="image/*" class="image-input" data-preview="preview1">
+      <img class="image-preview" id="preview1" alt="Preview"><br>
+
+      <!-- Image upload field 2 with preview (auto detect orientation and aspect ratio) -->
+      <label for="image2">Image 2 (auto detect):</label>
+      <input type="file" name="image2[]" accept="image/*" class="image-input" data-preview="preview2" multiple>
+      <img class="image-preview" id="preview2" alt="Preview"><br>
+
+      <button type="button" id="processBtn">Process Images</button>
+      <a id="downloadLink" style="display: none;" download="">
+        <button type="button" id="downloadBtn">Download All</button>
+      </a>
+    </form>
+  </div>
+
+  <script>
+    $(document).ready(function() {
+      var zip = new JSZip();
+      var clientName = ""; // Variable to store client name
+
+      // Function to handle file input change and show preview
+      function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+          var reader = new FileReader();
+
+          reader.onload = function(e) {
+            $('#' + $(input).data('preview')).attr('src', e.target.result);
+          };
+
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+
+      // Trigger handleFileSelect when input file changes
+      $('.image-input').change(function() {
+        handleFileSelect(this);
+      });
+
+      // Function to resize or crop images
+      function processImages() {
+        $('.image-input').each(function(index, element) {
+          var input = $(element)[0];
+          var previewId = $(element).data('preview');
+
+          // Check if multiple files are selected
+          if (input.files && input.files.length > 0) {
+            $.each(input.files, function(i, file) {
+              var canvas = document.createElement('canvas');
+              var ctx = canvas.getContext('2d');
+              var img = new Image();
+              img.src = URL.createObjectURL(file);
+
+              img.onload = function() {
+                if (index === 0) {
+                  // Fit, center-top, 400x400px without squeezing for the first field
+                  var targetWidth = 400;
+                  var targetHeight = 400;
+                  var aspectRatio = img.width / img.height;
+
+                  // Use higher pixel density
+                  canvas.width = targetWidth * 2;
+                  canvas.height = targetHeight * 2;
+                  ctx.scale(2, 2);
+
+                  var scale = Math.max(targetWidth / img.width, targetHeight / img.height);
+                  var newWidth = img.width * scale;
+                  var newHeight = img.height * scale;
+                  var offsetX = (newWidth - targetWidth) / 2;
+                  var offsetY = 0; // Center-top
+
+                  ctx.drawImage(img, -offsetX, -offsetY, newWidth, newHeight);
+                } else {
+                  // Scale down to 400x600px with cover aspect ratio for portrait images
+                  var isPortrait = img.height > img.width;
+                  var targetWidth, targetHeight;
+
+                  if (isPortrait) {
+                    targetWidth = 400;
+                    targetHeight = 600;
+                  } else {
+                    // Scale down to 600x400px with cover aspect ratio for landscape images
+                    targetWidth = 600;
+                    targetHeight = 400;
+                  }
+
+                  // Calculate scaling factors
+                  var scaleX = targetWidth / img.width;
+                  var scaleY = targetHeight / img.height;
+                  var scale = Math.max(scaleX, scaleY);
+
+                  // Use higher pixel density
+                  canvas.width = targetWidth * 2;
+                  canvas.height = targetHeight * 2;
+                  ctx.scale(2, 2);
+
+                  // Calculate centering offsets
+                  var offsetX = (targetWidth - img.width * scale) / 2;
+                  var offsetY = (targetHeight - img.height * scale) / 2;
+
+                  // Draw the image with cover aspect ratio
+                  ctx.drawImage(img, -offsetX, -offsetY, img.width * scale, img.height * scale);
+                }
+
+                // Add the processed image to the zip file with higher quality
+                var fileName = 'image_' + clientName + '_' + (index + 1) + '_' + (i + 1) + '.jpg';
+                var imageData = canvas.toDataURL('image/jpeg', 0.9); // Adjust quality (0.9 is high quality)
+                zip.file(fileName, imageData.split(',')[1], { base64: true });
+
+                // Check if all images are processed
+                if (index === $('.image-input').length - 1 && i === input.files.length - 1) {
+                  alert('Files are ready!');
+                  $('#downloadLink').show();
+                }
+              };
+            });
+          }
+        });
+      }
+
+      // Process button click event
+      $("#processBtn").click(function() {
+        clientName = $("#clientName").val(); // Get the client name
+        processImages();
+      });
+
+      // Download button click event
+      $("#downloadBtn").click(function() {
+        zip.generateAsync({ type: "blob" }).then(function(content) {
+          // Create a Blob object and set the download link
+          var blob = new Blob([content]);
+          var zipFileName = clientName ? clientName + "_images.zip" : "images.zip"; // Include client name in the zip file name
+          var downloadUrl = URL.createObjectURL(blob);
+          $('#downloadLink').attr('download', zipFileName).attr('href', downloadUrl);
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
