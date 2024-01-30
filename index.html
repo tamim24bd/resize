@@ -175,18 +175,19 @@
 
                   ctx.drawImage(img, -offsetX, -offsetY, newWidth, newHeight);
                 } else {
-                  // Resize for the other fields (auto detect orientation and aspect ratio)
+                  // Crop the second set of images (auto detect orientation and aspect ratio)
                   var targetWidth, targetHeight;
 
                   // Check if the height is less than the width
                   if (img.height < img.width) {
-                    targetWidth = 600;
-                    targetHeight = 400;
+                    targetWidth = 400; // Set your desired width
+                    targetHeight = 400; // Set your desired height
                   } else {
-                    targetWidth = 400;
-                    targetHeight = 600;
+                    targetWidth = 600; // Set your desired width
+                    targetHeight = 600; // Set your desired height
                   }
 
+                  // Crop the image
                   canvas.width = targetWidth;
                   canvas.height = targetHeight;
 
@@ -196,11 +197,9 @@
                     orientation = EXIF.getTag(this, 'Orientation') || 1;
                   });
 
-                  // Adjust canvas dimensions based on orientation
-                  if (orientation > 4) {
-                    canvas.width = targetHeight;
-                    canvas.height = targetWidth;
-                  }
+                  // Calculate cropping coordinates
+                  var cropX = (img.width - targetWidth) / 2;
+                  var cropY = (img.height - targetHeight) / 2;
 
                   // Apply orientation transformations
                   switch (orientation) {
@@ -237,8 +236,8 @@
                       break;
                   }
 
-                  // Draw the image on the canvas
-                  ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                  // Draw the cropped image on the canvas
+                  ctx.drawImage(img, cropX, cropY, targetWidth, targetHeight);
                 }
 
                 // Add the processed image to the zip file with higher quality
