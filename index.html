@@ -175,24 +175,26 @@
 
                 ctx.drawImage(img, -offsetX, -offsetY, newWidth, newHeight);
               } else {
-                // Scale down to 600px height while preserving aspect ratio
+                // Scale down to 400x600px with cover aspect ratio
+                var targetWidth = 400;
                 var targetHeight = 600;
-                var targetWidth = (img.width / img.height) * targetHeight;
+
+                // Calculate scaling factors
+                var scaleX = targetWidth / img.width;
+                var scaleY = targetHeight / img.height;
+                var scale = Math.max(scaleX, scaleY);
 
                 // Use higher pixel density
                 canvas.width = targetWidth * 2;
                 canvas.height = targetHeight * 2;
                 ctx.scale(2, 2);
 
-                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                // Calculate centering offsets
+                var offsetX = (targetWidth - img.width * scale) / 2;
+                var offsetY = (targetHeight - img.height * scale) / 2;
 
-                // Crop to 600x400px
-                var cropX = (targetWidth - 400) / 2;
-                var cropY = 0;
-                canvas.width = 400;
-                canvas.height = 600;
-
-                ctx.drawImage(canvas, cropX, cropY, 400, 600, 0, 0, 400, 600);
+                // Draw the image with cover aspect ratio
+                ctx.drawImage(img, 0, 0, img.width, img.height, -offsetX, -offsetY, img.width * scale, img.height * scale);
               }
 
               // Add the processed image to the zip file with higher quality
