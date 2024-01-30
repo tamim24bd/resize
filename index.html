@@ -119,118 +119,127 @@
   </div>
 
   <script>
-  $(document).ready(function() {
-    var zip = new JSZip();
-    var clientName = ""; // Variable to store client name
+    $(document).ready(function() {
+      var zip = new JSZip();
+      var clientName = ""; // Variable to store client name
 
-    // Function to handle file input change and show preview
-    function handleFileSelect(input) {
-      if (input.files && input.files[0]) {
-        var reader = new FileReader();
+      // Function to handle file input change and show preview
+      function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+          var reader = new FileReader();
 
-        reader.onload = function(e) {
-          $('#' + $(input).data('preview')).attr('src', e.target.result);
-        };
+          reader.onload = function(e) {
+            $('#' + $(input).data('preview')).attr('src', e.target.result);
+          };
 
-        reader.readAsDataURL(input.files[0]);
-      }
-    }
-
-    // Trigger handleFileSelect when input file changes
-    $('.image-input').change(function() {
-      handleFileSelect(this);
-    });
-
-    // Function to resize or crop images
-    function processImages() {
-      $('.image-input').each(function(index, element) {
-        var input = $(element)[0];
-        var previewId = $(element).data('preview');
-
-        // Check if multiple files are selected
-        if (input.files && input.files.length > 0) {
-          $.each(input.files, function(i, file) {
-            var canvas = document.createElement('canvas');
-            var ctx = canvas.getContext('2d');
-            var img = new Image();
-            img.src = URL.createObjectURL(file);
-
-            img.onload = function() {
-              if (index === 0) {
-                // Fit, center-top, 400x400px without squeezing for the first field
-                var targetWidth = 400;
-                var targetHeight = 400;
-                var aspectRatio = img.width / img.height;
-
-                // Use higher pixel density
-                canvas.width = targetWidth * 2;
-                canvas.height = targetHeight * 2;
-                ctx.scale(2, 2);
-
-                var scale = Math.max(targetWidth / img.width, targetHeight / img.height);
-                var newWidth = img.width * scale;
-                var newHeight = img.height * scale;
-                var offsetX = (newWidth - targetWidth) / 2;
-                var offsetY = 0; // Center-top
-
-                ctx.drawImage(img, -offsetX, -offsetY, newWidth, newHeight);
-              } else {
-                // Scale down to 400x600px with cover aspect ratio
-    var targetWidth = 400;
-    var targetHeight = 600;
-
-    // Calculate scaling factors
-    var scaleX = targetWidth / img.width;
-    var scaleY = targetHeight / img.height;
-    var scale = Math.max(scaleX, scaleY);
-
-    // Use higher pixel density
-    canvas.width = targetWidth * 2;
-    canvas.height = targetHeight * 2;
-    ctx.scale(2, 2);
-
-    // Calculate centering offsets
-    var offsetX = (targetWidth - img.width * scale) / 2;
-    var offsetY = (targetHeight - img.height * scale) / 2;
-
-    // Draw the image with cover aspect ratio
-    ctx.drawImage(img, -offsetX, -offsetY, img.width * scale, img.height * scale);
-}
-
-              // Add the processed image to the zip file with higher quality
-              var fileName = 'image_' + clientName + '_' + (index + 1) + '_' + (i + 1) + '.jpg';
-              var imageData = canvas.toDataURL('image/jpeg', 0.9); // Adjust quality (0.9 is high quality)
-              zip.file(fileName, imageData.split(',')[1], { base64: true });
-
-              // Check if all images are processed
-              if (index === $('.image-input').length - 1 && i === input.files.length - 1) {
-                alert('Files are ready!');
-                $('#downloadLink').show();
-              }
-            };
-          });
+          reader.readAsDataURL(input.files[0]);
         }
-      });
-    }
+      }
 
-    // Process button click event
-    $("#processBtn").click(function() {
-      clientName = $("#clientName").val(); // Get the client name
-      processImages();
-    });
+      // Trigger handleFileSelect when input file changes
+      $('.image-input').change(function() {
+        handleFileSelect(this);
+      });
 
-    // Download button click event
-    $("#downloadBtn").click(function() {
-      zip.generateAsync({ type: "blob" }).then(function(content) {
-        // Create a Blob object and set the download link
-        var blob = new Blob([content]);
-        var zipFileName = clientName ? clientName + "_images.zip" : "images.zip"; // Include client name in the zip file name
-        var downloadUrl = URL.createObjectURL(blob);
-        $('#downloadLink').attr('download', zipFileName).attr('href', downloadUrl);
+      // Function to resize or crop images
+      function processImages() {
+        $('.image-input').each(function(index, element) {
+          var input = $(element)[0];
+          var previewId = $(element).data('preview');
+
+          // Check if multiple files are selected
+          if (input.files && input.files.length > 0) {
+            $.each(input.files, function(i, file) {
+              var canvas = document.createElement('canvas');
+              var ctx = canvas.getContext('2d');
+              var img = new Image();
+              img.src = URL.createObjectURL(file);
+
+              img.onload = function() {
+                if (index === 0) {
+                  // Fit, center-top, 400x400px without squeezing for the first field
+                  var targetWidth = 400;
+                  var targetHeight = 400;
+                  var aspectRatio = img.width / img.height;
+
+                  // Use higher pixel density
+                  canvas.width = targetWidth * 2;
+                  canvas.height = targetHeight * 2;
+                  ctx.scale(2, 2);
+
+                  var scale = Math.max(targetWidth / img.width, targetHeight / img.height);
+                  var newWidth = img.width * scale;
+                  var newHeight = img.height * scale;
+                  var offsetX = (newWidth - targetWidth) / 2;
+                  var offsetY = 0; // Center-top
+
+                  ctx.drawImage(img, -offsetX, -offsetY, newWidth, newHeight);
+                } else {
+                  // Scale down to 400x600px with cover aspect ratio for portrait images
+                  var isPortrait = img.height > img.width;
+                  var targetWidth, targetHeight;
+
+                  if (isPortrait) {
+                    targetWidth = 400;
+                    targetHeight = 600;
+                  } else {
+                    // Scale down to 600x400px with cover aspect ratio for landscape images
+                    targetWidth = 600;
+                    targetHeight = 400;
+                  }
+
+                  // Calculate scaling factors
+                  var scaleX = targetWidth / img.width;
+                  var scaleY = targetHeight / img.height;
+                  var scale = Math.max(scaleX, scaleY);
+
+                  // Use higher pixel density
+                  canvas.width = targetWidth * 2;
+                  canvas.height = targetHeight * 2;
+                  ctx.scale(2, 2);
+
+                  // Calculate centering offsets
+                  var offsetX = (targetWidth - img.width * scale) / 2;
+                  var offsetY = (targetHeight - img.height * scale) / 2;
+
+                  // Draw the image with cover aspect ratio
+                  ctx.drawImage(img, -offsetX, -offsetY, img.width * scale, img.height * scale);
+                }
+
+                // Add the processed image to the zip file with higher quality
+                var fileName = 'image_' + clientName + '_' + (index + 1) + '_' + (i + 1) + '.jpg';
+                var imageData = canvas.toDataURL('image/jpeg', 0.9); // Adjust quality (0.9 is high quality)
+                zip.file(fileName, imageData.split(',')[1], { base64: true });
+
+                // Check if all images are processed
+                if (index === $('.image-input').length - 1 && i === input.files.length - 1) {
+                  alert('Files are ready!');
+                  $('#downloadLink').show();
+                }
+              };
+            });
+          }
+        });
+      }
+
+      // Process button click event
+      $("#processBtn").click(function() {
+        clientName = $("#clientName").val(); // Get the client name
+        processImages();
+      });
+
+      // Download button click event
+      $("#downloadBtn").click(function() {
+        zip.generateAsync({ type: "blob" }).then(function(content) {
+          // Create a Blob object and set the download link
+          var blob = new Blob([content]);
+          var zipFileName = clientName ? clientName + "_images.zip" : "images.zip"; // Include client name in the zip file name
+          var downloadUrl = URL.createObjectURL(blob);
+          $('#downloadLink').attr('download', zipFileName).attr('href', downloadUrl);
+        });
       });
     });
-  });
-</script>
+  </script>
 
 </body>
 </html>
