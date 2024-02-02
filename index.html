@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Upload and Resize App</title>
+  <title>CMM Profile Tools</title>
 	<link rel="icon" type="image/x-icon" href="https://tamim24bd.github.io/resize.github.io/tick.png">
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <script src="https://stuk.github.io/jszip/dist/jszip.js"></script>
@@ -236,9 +236,80 @@ button:hover {
   margin: 0 auto;
 }
 
+#copyMessage {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  display: none;
+}
+
   </style>
 </head>
 <body>
+  <div id="copyMessage">
+    <script>
+      $(document).ready(function() {
+  // Capitalizer button click event
+  $("#capitalizeBtn").click(function() {
+    var inputText = $("#textInput").val();
+    var words = inputText.split(' ');
+    for (var i = 0; i < words.length; i++) {
+      words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+    }
+    var capitalizedText = words.join(' ');
+    $("#textInput").val(capitalizedText);
+    copyToClipboard(capitalizedText);
+  });
+
+  // Centimeter to Inch Converter button click event
+  $("#convertBtn").on("click", function() {
+    var cmInput = $("#cmInput").val();
+    var cmValue = parseFloat(cmInput);
+    if (!isNaN(cmValue)) {
+      var inchesValue = cmValue * 0.393701;
+      var resultText = cmValue + " centimeters is equal to " + inchesValue.toFixed(2) + " inches.";
+      $("#result").text(resultText);
+      copyToClipboard(resultText);
+    } else {
+      $("#result").text("Please enter a valid number.");
+    }
+  });
+
+  // Add (- ) before every line button click event
+  $("#addPrefixBtn").click(function() {
+    var textareaContent = $("#inputTextArea").val();
+    var lines = textareaContent.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      lines[i] = "- " + lines[i];
+    }
+    var result = lines.join('\n');
+    $("#inputTextArea").val(result);
+    copyToClipboard(result);
+  });
+
+  // Function to copy text to clipboard
+  function copyToClipboard(text) {
+    var tempInput = $("<textarea>");
+    $("body").append(tempInput);
+    tempInput.val(text).select();
+    document.execCommand("copy");
+    tempInput.remove();
+
+    // Show copied message
+    $("#copyMessage").text("Copied to Clipboard").fadeIn();
+    setTimeout(function() {
+      $("#copyMessage").fadeOut();
+    }, 2000);
+  }
+});
+
+    </script>
+  </div>
+
   <div class="floating-button" id="resetBtn">
     <i class="material-icons">refresh</i>
     <script>
