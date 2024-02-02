@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CMM Profile Tools</title>
+  <title>Image Upload and Resize App</title>
 	<link rel="icon" type="image/x-icon" href="https://tamim24bd.github.io/resize.github.io/tick.png">
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <script src="https://stuk.github.io/jszip/dist/jszip.js"></script>
@@ -316,15 +316,8 @@ button:hover {
       $(document).ready(function() {
   // Reset button click event
   $("#resetBtn").click(function() {
-    // Clear input fields
-    $("#textInput, #clientName, #cmInput, #inputTextArea").val("");
-
-    // Reset image previews
-    $(".image-preview").attr("src", "");
-
-    // Hide download link and reset clientName
-    $("#downloadLink").hide();
-    clientName = "";
+// Use the browser's location.reload() method to perform a hard reload
+        location.reload(true);
   });
 });
     </script>
@@ -430,26 +423,39 @@ button:hover {
     <button id="addPrefixBtn">Add Prefix</button>
 
     <script>
-      $(document).ready(function() {
-        $("#addPrefixBtn").click(function() {
-          // Get the content of the textarea
-          var textareaContent = $("#inputTextArea").val();
-  
-          // Split the content into lines
-          var lines = textareaContent.split('\n');
-  
-          // Add the prefix to each line
-          for (var i = 0; i < lines.length; i++) {
-            lines[i] = "- " + lines[i];
-          }
-  
-          // Join the lines back together with a newline
-          var result = lines.join('\n');
-  
-          // Set the modified content back to the textarea
-          $("#inputTextArea").val(result);
-        });
-      });
+$(document).ready(function() {
+  $("#addPrefixBtn").click(function() {
+    // Get the content of the textarea
+    var textareaContent = $("#inputTextArea").val();
+
+    // Split the content into lines
+    var lines = textareaContent.split('\n');
+
+    // Process lines and add the prefix to non-blank lines
+    var resultLines = lines
+      .map(function(line) {
+        var trimmedLine = line.trim();
+        return trimmedLine !== '' ? '- ' + trimmedLine : '';
+      })
+      .filter(Boolean);
+
+    // Iterate through the lines and remove extra dashes
+    for (var i = 1; i < resultLines.length; i++) {
+      if (resultLines[i].startsWith('- ') && resultLines[i - 1].startsWith('- ')) {
+        resultLines[i] = resultLines[i].replace(/^- /, '');
+      }
+    }
+
+    // Join the lines back together with a newline
+    var result = resultLines.join('\n');
+
+    // Set the modified content back to the textarea
+    $("#inputTextArea").val(result);
+  });
+});
+
+
+
     </script>
 
   </div>
