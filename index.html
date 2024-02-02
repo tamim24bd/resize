@@ -273,6 +273,7 @@ button:hover {
       var inchesValue = cmValue * 0.393701;
       var resultText = cmValue + " centimeters is equal to " + inchesValue.toFixed(2) + " inches.";
       $("#result").text(resultText);
+	  resultText = inchesValue.toFixed(2);
       copyToClipboard(resultText);
     } else {
       $("#result").text("Please enter a valid number.");
