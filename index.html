@@ -256,11 +256,11 @@ button:hover {
   // Capitalizer button click event
   $("#capitalizeBtn").click(function() {
     var inputText = $("#textInput").val();
-    var words = inputText.split(' ');
-    for (var i = 0; i < words.length; i++) {
-      words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
-    }
-    var capitalizedText = words.join(' ');
+            var words = inputText.split(' ');
+            for (var i = 0; i < words.length; i++) {
+                words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+            }
+            var capitalizedText = words.join(' ');
     $("#textInput").val(capitalizedText);
     copyToClipboard(capitalizedText);
   });
